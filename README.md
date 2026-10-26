@@ -58,18 +58,12 @@ python3 -m http.server 8788 --bind 127.0.0.1
 Then open:
 
 ```text
-http://127.0.0.1:8788/tools/css-canvas-inspector/index.html?src=/tools/css-canvas-inspector/demo.html
+http://127.0.0.1:8788/index.html?src=/demo.html
 ```
 
 The blank starter is an inspection canvas, not a drag-and-drop page builder.
 Its content should come from the source HTML. It defaults to `1280 × 1707`
 with a `1280px` export width.
-
-For the included visa-stay cover demo:
-
-```text
-http://127.0.0.1:8788/xhs-promo/cover-editor.html
-```
 
 ## Use from a Codex session
 
@@ -89,7 +83,7 @@ Users can invoke it naturally:
 They can also invoke it explicitly:
 
 ```text
-$css-canvas-inspector 打开 xhs-promo/cover-edit.html
+$css-canvas-inspector 打开 cover-edit.html
 ```
 
 The skill launches `scripts/open_inspector.py`, which serves the project and

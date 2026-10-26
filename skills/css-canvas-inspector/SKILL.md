@@ -34,21 +34,22 @@ python3 <skill-directory>/scripts/open_inspector.py
 The blank canvas is for background/style inspection. Add visible content in
 the source HTML when the user needs to create text or design elements.
 
-For the visa-stay cover in this repository:
+A complete example — dual A/B variants plus animation frames, from your own
+project:
 
 ```bash
 python3 <skill-directory>/scripts/open_inspector.py \
-  xhs-promo/cover-edit.html \
+  card.html \
   --name "封面工作台" \
   --width 1080 \
   --height 1440 \
   --export-width 1280 \
   --variants a,b \
-  --variant-labels "A 纯文字|B 窗口滑动" \
+  --variant-labels "A 纯文字|B 动图" \
   --frames 48 \
   --frame-param d \
-  --rebuild .win-bar \
-  --storage xhs-cover
+  --rebuild .anim \
+  --storage my-card
 ```
 
 The launcher starts a same-origin local server, opens the browser, and stays
