@@ -1096,9 +1096,13 @@ export function createCanvasInspector(options) {
     );
 
     function exportCaptureTarget() {
-      return canvasesMode
-        ? canvasNodes[currentCanvasIndex]
-        : sourceDocument.body.firstElementChild || sourceDocument.body;
+      if (canvasesMode) return canvasNodes[currentCanvasIndex];
+      const body = sourceDocument.body;
+      const visibleChildren = Array.from(body.children).filter(
+        (node) => node.tagName !== "SCRIPT" && node.tagName !== "STYLE",
+      );
+      if (visibleChildren.length === 1) return visibleChildren[0];
+      return body;
     }
 
     async function withCaptureStyle(target, run) {
