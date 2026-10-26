@@ -1,0 +1,5 @@
+interface:
+  display_name: "CSS Canvas Inspector"
+  short_description: "Standard visual review surface for agent-generated designs; dual canvas and export"
+  default_prompt: "Use $css-canvas-inspector to open this HTML canvas in the visual editor."
+  brand_color: "#EF553C"

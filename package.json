@@ -1,0 +1,29 @@
+{
+  "name": "css-canvas-inspector",
+  "version": "0.3.5",
+  "description": "A lightweight visual CSS inspector for human-agent collaboration on fixed-size HTML canvases.",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "index.html",
+    "blank.html",
+    "demo.html",
+    "src",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md",
+    "INTEGRATION.md",
+    "INTEGRATION.zh.md"
+  ],
+  "scripts": {
+    "check": "node --check src/inspector.js"
+  },
+  "keywords": [
+    "css",
+    "visual-editor",
+    "design-tool",
+    "html",
+    "agent"
+  ]
+}
