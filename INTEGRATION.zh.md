@@ -21,7 +21,7 @@ agent 擅长写 HTML，人类擅长判断视觉——inspector 就是两者之�
 
 ```bash
 # 获取工具
-git clone https://github.com/<you>/css-canvas-inspector /path/to/inspector
+git clone https://github.com/nocaptain-oss/css-canvas-inspector /path/to/inspector
 
 # 在你自己的项目里打开你的设计稿
 cd your-project

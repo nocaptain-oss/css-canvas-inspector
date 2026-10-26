@@ -24,7 +24,7 @@ Any fixed-size HTML file works — no build step, no framework, no dependency.
 
 ```bash
 # get the tool
-git clone https://github.com/<you>/css-canvas-inspector /path/to/inspector
+git clone https://github.com/nocaptain-oss/css-canvas-inspector /path/to/inspector
 
 # open your design from your own project
 cd your-project
