@@ -170,10 +170,15 @@ Before publishing, set the final package name and repository URL in
 `package.json`. The included MIT license permits commercial use, modification,
 and redistribution.
 
+## Other tools from this author
+
+- [visa-stay-guard](https://github.com/nocaptain-oss/visa-stay-guard) —
+  an Agent Skill that computes visa stay days (Schengen 90/180 exact rolling
+  window, 213 countries' rules, offline and verifiable)
+
 ## Limitations
 
-- The source must be same-origin because the inspector accesses its iframe DOM.
-- URL-based assets inside an exported HTML file are inlined when possible;
+- The source must be same-origin because the inspector accesses its iframe DOM.- URL-based assets inside an exported HTML file are inlined when possible;
   cross-origin assets may remain linked.
 - Image export uses `html2canvas`; heavily layered gradients, blend modes, and
   filters can be approximated. Use the HTML output for exact CSS behavior.
