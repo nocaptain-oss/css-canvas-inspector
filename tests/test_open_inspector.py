@@ -26,6 +26,7 @@ RUNTIME_FILES = (
     "src/vendor/html2canvas.min.js",
     "src/vendor/html2canvas.LICENSE.txt",
 )
+PACKAGED_FILES = (*RUNTIME_FILES, "LICENSE")
 
 
 def load_launcher():
@@ -50,11 +51,11 @@ def fetch_code(url: str, headers: dict[str, str] | None = None) -> tuple[int, by
 
 
 class InstallationTests(unittest.TestCase):
-    def test_skill_runtime_is_complete_and_matches_canonical_files(self) -> None:
-        for relative in RUNTIME_FILES:
+    def test_skill_package_is_complete_and_matches_canonical_files(self) -> None:
+        for relative in PACKAGED_FILES:
             canonical = REPO / relative
             bundled = SKILL / relative
-            self.assertTrue(bundled.is_file(), f"missing bundled runtime: {relative}")
+            self.assertTrue(bundled.is_file(), f"missing bundled file: {relative}")
             self.assertEqual(
                 canonical.read_bytes(),
                 bundled.read_bytes(),

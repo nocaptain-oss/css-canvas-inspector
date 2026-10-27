@@ -21,6 +21,23 @@ Three ways to make this the review surface for your design work — see
 - **Sub-agents** — make it the standard co-creation interface instead of
   screenshot loops: [Level 3](INTEGRATION.md#level-3-make-it-the-standard-interface-for-sub-agents)
 
+## Repository layout
+
+| Path | Needed to run installed skill? | Audience |
+|---|---:|---|
+| `skills/css-canvas-inspector/` | Yes | End users copy this complete directory |
+| `README.md`, `INTEGRATION.md`, `INTEGRATION.zh.md` | No | GitHub/NPM onboarding and workflow guides |
+| `LICENSE` | Yes — copied into the bundled skill | Everyone redistributing or using the code |
+| root `index.html`, `blank.html`, `src/` | No for skill-only use | Canonical development runtime, synced into the skill |
+| `tests/`, `scripts/` | No | Maintainers and CI |
+| `AGENTS.md` | No | Agents maintaining this repository |
+| `package.json`, `demo.html` | No | NPM publishing and local demonstration |
+
+The root runtime is the development source of truth. `npm run sync:skill`
+copies it into the self-contained skill directory; `npm run check` fails if the
+copies drift. Human guides stay at the repository root rather than being
+duplicated inside every installed skill.
+
 ## Install the skill
 
 The skill directory is self-contained. Install the whole directory, including

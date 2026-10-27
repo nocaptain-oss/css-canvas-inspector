@@ -18,6 +18,7 @@ const files = [
   "src/webp-anim.js",
   "src/vendor/html2canvas.min.js",
   "src/vendor/html2canvas.LICENSE.txt",
+  "LICENSE",
 ];
 const check = process.argv.includes("--check");
 const drift = [];
