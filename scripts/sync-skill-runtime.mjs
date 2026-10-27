@@ -14,6 +14,7 @@ const files = [
   "blank.html",
   "src/inspector.css",
   "src/inspector.js",
+  "src/canvas-size.js",
   "src/webp-anim.js",
   "src/vendor/html2canvas.min.js",
   "src/vendor/html2canvas.LICENSE.txt",

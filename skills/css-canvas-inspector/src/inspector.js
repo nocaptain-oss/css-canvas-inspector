@@ -1,4 +1,5 @@
-import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.9";
+import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.10";
+import { chooseCanvasSize } from "./canvas-size.js?v=0.3.10";
 
 const byId = (id) => document.getElementById(id);
 
@@ -250,39 +251,33 @@ export function createCanvasInspector(options) {
   function measureCanvasSize(doc) {
     const root = canvasRoot(doc);
     const rect = root.getBoundingClientRect();
-    const attrWidth = Number.parseFloat(root.dataset?.canvasWidth || "");
-    const attrHeight = Number.parseFloat(root.dataset?.canvasHeight || "");
+    let attrWidth = Number.parseFloat(root.dataset?.canvasWidth || "");
+    let attrHeight = Number.parseFloat(root.dataset?.canvasHeight || "");
     const attrSize = (root.dataset?.canvasSize || "").match(
       /^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i,
     );
-    let width = metaDimension(doc, "canvas-width");
-    let height = metaDimension(doc, "canvas-height");
-    if (!width && Number.isFinite(attrWidth) && attrWidth > 0) {
-      width = Math.ceil(attrWidth);
-    }
-    if (!height && Number.isFinite(attrHeight) && attrHeight > 0) {
-      height = Math.ceil(attrHeight);
-    }
-    if (!width && attrSize) width = Number(attrSize[1]);
-    if (!height && attrSize) height = Number(attrSize[2]);
-    width ||= Math.ceil(rect.width || root.offsetWidth || 0);
-    height ||= Math.ceil(rect.height || root.offsetHeight || 0);
-    if (root === doc.body || root === doc.documentElement) {
-      width = Math.max(
-        width,
-        doc.documentElement.scrollWidth,
-        doc.body?.scrollWidth || 0,
-      );
-      height = Math.max(
-        height,
-        doc.documentElement.scrollHeight,
-        doc.body?.scrollHeight || 0,
-      );
-    }
-    return {
-      width: Math.max(1, Math.round(width || config.width)),
-      height: Math.max(1, Math.round(height || config.height)),
-    };
+    if (!Number.isFinite(attrWidth) && attrSize) attrWidth = Number(attrSize[1]);
+    if (!Number.isFinite(attrHeight) && attrSize) attrHeight = Number(attrSize[2]);
+    return chooseCanvasSize({
+      rootKind:
+        root === doc.body
+          ? "body"
+          : root === doc.documentElement
+            ? "document"
+            : "element",
+      metaWidth: metaDimension(doc, "canvas-width"),
+      metaHeight: metaDimension(doc, "canvas-height"),
+      attrWidth,
+      attrHeight,
+      rectWidth: rect.width || root.offsetWidth,
+      rectHeight: rect.height || root.offsetHeight,
+      bodyScrollWidth: doc.body?.scrollWidth,
+      bodyScrollHeight: doc.body?.scrollHeight,
+      documentScrollWidth: doc.documentElement.scrollWidth,
+      documentScrollHeight: doc.documentElement.scrollHeight,
+      fallbackWidth: config.width,
+      fallbackHeight: config.height,
+    });
   }
 
   function applyCanvasSize(width, height, resetZoom = false) {

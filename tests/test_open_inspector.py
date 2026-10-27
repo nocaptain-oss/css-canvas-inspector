@@ -148,6 +148,18 @@ class InstallationTests(unittest.TestCase):
         self.assertIn("Width: 1080", result.stdout)
         self.assertIn("Height: 2000", result.stdout)
 
+    def test_home_directory_marker_does_not_become_project_root(self) -> None:
+        launcher = load_launcher()
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw) / "home"
+            source_dir = home / "Downloads"
+            source_dir.mkdir(parents=True)
+            (home / "package.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(
+                launcher.find_project_root(source_dir, boundary=home),
+                source_dir.resolve(),
+            )
+
 
 class ServerTests(unittest.TestCase):
     @classmethod

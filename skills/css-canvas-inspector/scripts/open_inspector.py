@@ -26,6 +26,7 @@ REQUIRED_RUNTIME_FILES = (
     "blank.html",
     "src/inspector.css",
     "src/inspector.js",
+    "src/canvas-size.js",
     "src/webp-anim.js",
     "src/vendor/html2canvas.min.js",
     "src/vendor/html2canvas.LICENSE.txt",
@@ -146,10 +147,17 @@ def find_inspector_dir() -> Path | None:
     return None
 
 
-def find_project_root(start: Path) -> Path:
+def find_project_root(start: Path, *, boundary: Path | None = None) -> Path:
     current = start.resolve()
+    resolved_boundary = boundary.resolve() if boundary is not None else None
     markers = (".git", "package.json", "pyproject.toml", "Cargo.toml", "go.mod")
     for candidate in (current, *current.parents):
+        if (
+            resolved_boundary is not None
+            and candidate == resolved_boundary
+            and current != resolved_boundary
+        ):
+            return current
         if any((candidate / marker).exists() for marker in markers):
             return candidate
     return current
@@ -223,7 +231,7 @@ def resolve_layout(args: argparse.Namespace, parser: argparse.ArgumentParser) ->
         project = (
             Path(args.project).expanduser().resolve()
             if args.project
-            else find_project_root(source.parent)
+            else find_project_root(source.parent, boundary=Path.home())
         )
 
     if not project.is_dir():
