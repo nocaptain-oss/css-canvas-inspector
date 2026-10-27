@@ -50,6 +50,8 @@ incomplete installation.
 - Enter any additional CSS property.
 - Edit direct text nodes inside mixed inline content.
 - Undo and redo edits, or nudge with arrow keys.
+- Duplicate the selected element into the same parent; copies persist in the
+  current storage namespace, participate in undo, and appear in downloaded HTML.
 - Delete the selected element (button or `Delete` key; undo restores it).
 - Multi-canvas mode: pass `canvases=<selector>` so each matching node in the
   source page (for example `section.poster`) becomes an independent page with

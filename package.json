@@ -1,6 +1,6 @@
 {
   "name": "css-canvas-inspector",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "A lightweight visual CSS inspector for human-agent collaboration on fixed-size HTML canvases.",
   "type": "module",
   "license": "MIT",

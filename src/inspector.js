@@ -1,5 +1,5 @@
-import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.10";
-import { chooseCanvasSize } from "./canvas-size.js?v=0.3.10";
+import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.11";
+import { chooseCanvasSize } from "./canvas-size.js?v=0.3.11";
 
 const byId = (id) => document.getElementById(id);
 
@@ -110,6 +110,7 @@ export function createCanvasInspector(options) {
   const inspectorFields = byId("inspectorFields");
   const resetSelected = byId("resetSelected");
   const deleteSelectedButton = byId("deleteSelected");
+  const copySelectedButton = byId("copySelected");
   const pageControl = byId("pageControl");
   const pageSelect = byId("pageSelect");
   const textSection = byId("textSection");
@@ -245,7 +246,22 @@ export function createCanvasInspector(options) {
       if (visibleCanvasElement(element)) return element;
     }
     const children = Array.from(doc.body?.children || []).filter(visibleCanvasElement);
-    return children.length === 1 ? children[0] : doc.body || doc.documentElement;
+    if (children.length === 1) {
+      const child = children[0];
+      const bodyRect = doc.body.getBoundingClientRect();
+      const childRect = child.getBoundingClientRect();
+      const container = /^(DIV|MAIN|SECTION|ARTICLE|FIGURE|ASIDE|HEADER|FOOTER)$/i.test(
+        child.tagName,
+      );
+      if (
+        container &&
+        childRect.width >= bodyRect.width * 0.5 &&
+        childRect.height >= bodyRect.height * 0.5
+      ) {
+        return child;
+      }
+    }
+    return doc.body || doc.documentElement;
   }
 
   function measureCanvasSize(doc) {
@@ -370,7 +386,31 @@ export function createCanvasInspector(options) {
 
   function applyOverrides(doc, variant) {
     const changes = loadOverridesFor(variant);
+    const copies = Array.isArray(changes.__copies) ? changes.__copies : [];
+    copies.forEach((copy) => {
+      if (!copy || typeof copy.html !== "string") return;
+      const id = typeof copy.id === "string" ? copy.id : "";
+      if (
+        id &&
+        Array.from(doc.querySelectorAll("[data-inspector-copy-id]")).some(
+          (element) => element.getAttribute("data-inspector-copy-id") === id,
+        )
+      ) {
+        return;
+      }
+      const parent = copy.parent
+        ? doc.body.querySelector(copy.parent)
+        : doc.body;
+      if (!parent) return;
+      const template = doc.createElement("template");
+      template.innerHTML = copy.html;
+      const clone = template.content.firstElementChild;
+      if (!clone) return;
+      if (id) clone.setAttribute("data-inspector-copy-id", id);
+      parent.appendChild(clone);
+    });
     Object.entries(changes).forEach(([path, change]) => {
+      if (path === "__copies") return;
       const element = doc.body.querySelector(path);
       if (!element) return;
       if (change.deleted) {
@@ -420,6 +460,7 @@ export function createCanvasInspector(options) {
     inspectorFields.disabled = !enabled;
     resetSelected.disabled = !enabled;
     deleteSelectedButton.disabled = !enabled;
+    copySelectedButton.disabled = !enabled;
   }
 
   function clearInspector() {
@@ -768,6 +809,50 @@ export function createCanvasInspector(options) {
     byId("applyStatus").textContent = "元素已删除（Ctrl/Cmd+Z 撤销，重置此元素可恢复）。";
   }
 
+  function duplicateSelected() {
+    if (!selected || !selectedPath) return;
+    if (canvasesMode && canvasNodes.includes(selected)) {
+      byId("applyStatus").textContent = "画布容器本身不可复制，请选择画布内的元素。";
+      return;
+    }
+    const element = selected;
+    const parent = element.parentElement;
+    if (!parent) return;
+    const parentPath = elementPath(parent, sourceDocument);
+    let clone = null;
+    editSession = null;
+    const changed = mutateOverrides(() => {
+      clone = element.cloneNode(true);
+      clone.classList.remove(selectedClass, hoverClass);
+      clone
+        .querySelectorAll(`.${selectedClass}, .${hoverClass}`)
+        .forEach((node) => node.classList.remove(selectedClass, hoverClass));
+      clone.removeAttribute("data-inspector-copy-id");
+      clone
+        .querySelectorAll("[data-inspector-copy-id]")
+        .forEach((node) => node.removeAttribute("data-inspector-copy-id"));
+      const id =
+        typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `copy-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      clone.setAttribute("data-inspector-copy-id", id);
+      parent.appendChild(clone);
+      overrides.__copies = Array.isArray(overrides.__copies)
+        ? overrides.__copies
+        : [];
+      overrides.__copies.push({
+        id,
+        parent: parentPath,
+        html: clone.outerHTML,
+      });
+    });
+    if (!changed || !clone) return;
+    clearInspector();
+    refreshElementSelect();
+    select(clone);
+    byId("applyStatus").textContent = "元素已复制（Ctrl/Cmd+Z 撤销）。";
+  }
+
   function showLoadError(message) {
     loadErrorText.textContent = message;
     loadError.hidden = false;
@@ -1067,6 +1152,7 @@ export function createCanvasInspector(options) {
     });
 
     deleteSelectedButton.addEventListener("click", deleteSelected);
+    copySelectedButton.addEventListener("click", duplicateSelected);
 
     byId("applyCss").addEventListener("click", () => {
       if (!selected) return;
@@ -1142,6 +1228,9 @@ export function createCanvasInspector(options) {
       clone
         .querySelectorAll(`.${selectedClass}, .${hoverClass}`)
         .forEach((node) => node.classList.remove(selectedClass, hoverClass));
+      clone
+        .querySelectorAll("[data-inspector-copy-id]")
+        .forEach((node) => node.removeAttribute("data-inspector-copy-id"));
       clone.querySelector("#__canvas_inspector_style")?.remove();
       clone.querySelector("#__canvas_inspector_canvases_style")?.remove();
 

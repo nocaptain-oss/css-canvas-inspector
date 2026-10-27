@@ -166,9 +166,10 @@ its own measured dimensions, page switcher, per-page export, and element list
 scoped to the current page. Never open a deck as one stitched canvas — that
 forces the human to crop exports by hand.
 
-The selected element can be deleted with the 删除元素 button or the `Delete`
-key; undo (Ctrl/Cmd+Z) restores it. Deleting an empty text shell removes the
-element itself, not just its characters.
+The selected element can be copied with 复制元素, or deleted with the 删除元素
+button or `Delete` key; undo (Ctrl/Cmd+Z) restores both. Copies are appended to
+the same parent, persist in browser storage, and appear in the downloaded HTML.
+Deleting an empty text shell removes the element itself, not just its characters.
 
 The canvas viewport can scroll horizontally and vertically. Use **适应**, **100%**,
 the zoom range, or `Ctrl/Cmd + wheel` when the user needs a closer view.
