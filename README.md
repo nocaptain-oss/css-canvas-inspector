@@ -4,18 +4,42 @@ English · [简体中文](README.zh.md)
 
 # CSS Canvas Inspector
 
-Visual QA for agent-built fixed-size HTML. A person selects elements and
-adjusts real CSS in the browser, then hands the edited HTML back to the agent.
-Export JPG, PNG, animated WebP, or the edited HTML.
+**Edit the HTML your agent built. Visually.**
 
-No build step or framework is required. The Python launcher uses only the
-standard library. It serves the inspector runtime and your project from one
-local origin, so the source can live in any project directory.
+A local visual QA surface for fixed-size HTML. Adjust real CSS in the browser,
+export JPG, PNG, animated WebP, or edited HTML, then give the result back to
+your agent.
+
+[Install the skill](#install-the-skill) · [Read the integration guide](INTEGRATION.md)
+
+Real CSS · Multi-format export · Runs locally · No build step
+
+1. Generate a fixed-size HTML canvas.
+2. Edit it visually in the browser.
+3. Download the HTML and hand the real CSS back to the agent.
+
+## Install the skill
+
+The skill directory is self-contained. Install the whole directory, including
+`index.html`, `blank.html`, `src/`, `scripts/`, and `agents/`:
+
+```bash
+git clone --depth 1 https://github.com/nocaptain-oss/css-canvas-inspector /tmp/css-canvas-inspector
+mkdir -p ~/.agents/skills/css-canvas-inspector
+cp -R /tmp/css-canvas-inspector/skills/css-canvas-inspector/. \
+  ~/.agents/skills/css-canvas-inspector/
+
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html --check
+```
+
+Use `~/.codex/skills/` for Codex or `~/.claude/skills/` for Claude Code. The
+check must print `Runtime: OK`. Copying only `SKILL.md` and `scripts/` is an
+incomplete installation.
 
 ## Adopt it
 
-Three ways to make this the review surface for your design work — see
-[INTEGRATION.md](INTEGRATION.md):
+Three ways to make this the review surface for your design work:
 
 - **Human quickstart** — open any fixed-size HTML file in the editor:
   [Level 1](INTEGRATION.md#level-1-use-it-as-a-human)
@@ -40,25 +64,6 @@ The bundled skill directory is the single runtime source of truth.
 `npm run check` validates that it contains every required runtime file. Human
 guides stay at the repository root rather than being duplicated inside every
 installed skill.
-
-## Install the skill
-
-The skill directory is self-contained. Install the whole directory, including
-`index.html`, `blank.html`, `src/`, `scripts/`, and `agents/`:
-
-```bash
-git clone --depth 1 https://github.com/nocaptain-oss/css-canvas-inspector /tmp/css-canvas-inspector
-mkdir -p ~/.agents/skills/css-canvas-inspector
-cp -R /tmp/css-canvas-inspector/skills/css-canvas-inspector/. \
-  ~/.agents/skills/css-canvas-inspector/
-
-python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
-  /absolute/path/to/poster.html --check
-```
-
-Use `~/.codex/skills/` for Codex or `~/.claude/skills/` for Claude Code. The
-check must print `Runtime: OK`. Copying only `SKILL.md` and `scripts/` is an
-incomplete installation.
 
 ## Features
 
