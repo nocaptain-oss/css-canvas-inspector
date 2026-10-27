@@ -39,17 +39,6 @@ def inside(path: Path, root: Path) -> bool:
         return False
 
 
-def editor_is_running(port: int, entry_path: str) -> bool:
-    try:
-        with urllib.request.urlopen(
-            f"http://127.0.0.1:{port}{entry_path}", timeout=0.6
-        ) as response:
-            body = response.read(4096).decode("utf-8", errors="ignore")
-            return response.status == 200 and "CSS Canvas Inspector" in body
-    except OSError:
-        return False
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Open a fixed-size HTML file in CSS Canvas Inspector."
@@ -85,41 +74,59 @@ def main() -> int:
     parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
 
+    source_was_omitted = args.source is None
+    source = (
+        Path(args.source).expanduser().resolve()
+        if args.source
+        else None
+    )
+    anchor = source.parent if source is not None else Path.cwd()
     project = (
         Path(args.project).expanduser().resolve()
         if args.project
-        else find_project_root(Path.cwd())
+        else find_project_root(anchor)
     )
+    if args.project is None and not (
+        project / "tools" / "css-canvas-inspector" / "index.html"
+    ).is_file():
+        if source is not None:
+            project = find_project_root(Path.cwd())
     inspector = (
         Path(args.inspector).expanduser().resolve()
         if args.inspector
         else project / "tools" / "css-canvas-inspector"
     )
-    source_was_omitted = args.source is None
-    source = (
-        Path(args.source).expanduser().resolve()
-        if args.source
-        else inspector / "blank.html"
-    )
+    if source is None:
+        source = inspector / "blank.html"
     if not source.is_file():
         parser.error(f"source file not found: {source}")
 
     entry = inspector / "index.html"
     if not entry.is_file():
         parser.error(
-            f"inspector not found at {entry}; pass --inspector or install the package"
+            f"inspector not found at {entry} (project inferred from "
+            f"{'source file' if args.source else 'cwd'}: {project}). "
+            "Fix one of two ways: (1) pass --inspector pointing at your "
+            "css-canvas-inspector checkout (the directory containing "
+            "index.html); (2) open a file that lives inside that project, "
+            "or run the launcher from there."
         )
 
     server_root = Path(os.path.commonpath([project, inspector])).resolve()
     if not inside(source, server_root):
-        parser.error("source and inspector must share the directory served by the local server")
+        parser.error(
+            f"source file is outside the served directory and the inspector "
+            f"cannot read it cross-origin:\n  source: {source}\n  served:  {server_root}\n"
+            "Copy the file into the served project first, e.g.:\n"
+            f"  cp {source} {server_root}/ && rerun with the copied path"
+        )
 
-    def url_path(path: Path) -> str:
-        relative = path.relative_to(server_root).as_posix()
+    def url_path(path: Path, root: Path) -> str:
+        relative = path.relative_to(root).as_posix()
         return "/" + urllib.parse.quote(relative)
 
     params = {
-        "src": url_path(source),
+        "src": url_path(source, server_root),
         "name": (
             "空白检查画布"
             if source_was_omitted and args.name == "CSS Canvas Inspector"
@@ -142,10 +149,26 @@ def main() -> int:
     }
     params.update({key: value for key, value in optional.items() if value})
 
-    entry_path = url_path(entry)
-    if editor_is_running(args.port, entry_path):
+    def probe_running_root(port: int) -> Path | None:
+        for root in [server_root, *server_root.parents]:
+            if not inside(entry, root):
+                continue
+            try:
+                with urllib.request.urlopen(
+                    f"http://127.0.0.1:{port}{url_path(entry, root)}", timeout=3
+                ) as response:
+                    body = response.read(4096).decode("utf-8", errors="ignore")
+                    if response.status == 200 and "CSS Canvas Inspector" in body:
+                        return root
+            except OSError:
+                continue
+        return None
+
+    running_root = probe_running_root(args.port)
+    if running_root is not None:
+        params["src"] = url_path(source, running_root)
         url = (
-            f"http://127.0.0.1:{args.port}{entry_path}?"
+            f"http://127.0.0.1:{args.port}{url_path(entry, running_root)}?"
             + urllib.parse.urlencode(params)
         )
         print(f"CSS Canvas Inspector already running: {url}")
@@ -164,7 +187,7 @@ def main() -> int:
     host, port = server.server_address
 
     url = (
-        f"http://{host}:{port}{entry_path}?"
+        f"http://{host}:{port}{url_path(entry, server_root)}?"
         + urllib.parse.urlencode(params)
     )
     print(f"CSS Canvas Inspector: {url}")
