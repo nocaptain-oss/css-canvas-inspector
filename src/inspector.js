@@ -1,4 +1,4 @@
-import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.3";
+import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.8";
 
 const byId = (id) => document.getElementById(id);
 
@@ -1539,6 +1539,7 @@ export function createCanvasInspector(options) {
         sourceDocument = record.doc;
         overrides = loadOverridesFor(currentVariant);
         initCanvasNodes(record.doc);
+        if (!canvasesMode) refreshElementSelect();
       }
       updateScale();
       downloadCanvasButton.disabled = false;

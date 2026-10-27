@@ -5,8 +5,9 @@ for human-agent design collaboration: a person selects elements and adjusts
 layout values on the left, while an agent can keep editing the underlying HTML
 and CSS.
 
-No framework or runtime dependency is required. The source canvas and the
-inspector must be served from the same origin.
+No build step or framework is required. The Python launcher uses only the
+standard library. It serves the inspector runtime and your project from one
+local origin, so the source can live in any project directory.
 
 ## Adopt it
 
@@ -19,6 +20,25 @@ Three ways to make this the review surface for your design work — see
   [Level 2](INTEGRATION.md#level-2-reference-it-from-your-design-skill)
 - **Sub-agents** — make it the standard co-creation interface instead of
   screenshot loops: [Level 3](INTEGRATION.md#level-3-make-it-the-standard-interface-for-sub-agents)
+
+## Install the skill
+
+The skill directory is self-contained. Install the whole directory, including
+`index.html`, `blank.html`, `src/`, `scripts/`, and `agents/`:
+
+```bash
+git clone --depth 1 https://github.com/nocaptain-oss/css-canvas-inspector /tmp/css-canvas-inspector
+mkdir -p ~/.agents/skills/css-canvas-inspector
+cp -R /tmp/css-canvas-inspector/skills/css-canvas-inspector/. \
+  ~/.agents/skills/css-canvas-inspector/
+
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html --check
+```
+
+Use `~/.codex/skills/` for Codex or `~/.claude/skills/` for Claude Code. The
+check must print `Runtime: OK`. Copying only `SKILL.md` and `scripts/` is an
+incomplete installation.
 
 ## Features
 
@@ -47,18 +67,14 @@ Three ways to make this the review surface for your design work — see
 - Download an HTML copy with editor changes inlined.
 - Optionally switch among content variants and animation frames.
 
-## Run locally
+## Run from a checkout
 
-From the repository root:
+For development, run the launcher directly; it resolves the checkout runtime
+automatically:
 
 ```bash
-python3 -m http.server 8788 --bind 127.0.0.1
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8788/index.html?src=/demo.html
+python3 skills/css-canvas-inspector/scripts/open_inspector.py demo.html \
+  --width 1280 --height 1707
 ```
 
 The blank starter is an inspection canvas, not a drag-and-drop page builder.
@@ -68,9 +84,8 @@ with a `1280px` export width.
 ## Use from a Codex session
 
 The package includes the model-invocable skill in
-`skills/css-canvas-inspector`. Install that directory under
-`${CODEX_HOME:-$HOME/.codex}/skills` or `~/.agents/skills` when using a
-multi-harness setup.
+`skills/css-canvas-inspector`. After installing the complete directory, the
+agent can open any HTML file on disk:
 
 Users can invoke it naturally:
 
@@ -86,9 +101,14 @@ They can also invoke it explicitly:
 $css-canvas-inspector 打开 cover-edit.html
 ```
 
-The skill launches `scripts/open_inspector.py`, which serves the project and
-inspector from the same origin, then opens the browser. The model should not
-try to reproduce the editor with a screenshot or by describing CSS changes.
+The skill launches its bundled runtime, serves the source project at `/` and
+the inspector under `/__css_canvas_inspector__/`, then opens the browser. The
+default project root is the nearest `.git`, `package.json`, `pyproject.toml`,
+`Cargo.toml`, or `go.mod` directory; otherwise it is the source file's parent.
+Pass `--project` when HTML assets extend above that directory.
+
+The model should not reproduce the editor with a screenshot or describe CSS
+changes. See [INTEGRATION.md](INTEGRATION.md) for the project handoff pattern.
 
 ## Configure
 
@@ -96,7 +116,7 @@ The inspector is configured through URL parameters:
 
 | Parameter | Required | Example | Description |
 |---|---:|---|---|
-| `src` | yes | `/poster.html` | Same-origin HTML page to edit |
+| `src` | yes | `/poster.html` | Same-origin page path; the launcher fills this automatically |
 | `name` | no | `Poster Inspector` | Toolbar title |
 | `width` | no | `1080` | Canvas width in CSS pixels |
 | `height` | no | `1440` | Canvas height in CSS pixels |
@@ -123,7 +143,8 @@ The source page should:
 
 1. Render at the configured fixed dimensions.
 2. Use normal HTML and CSS.
-3. Be served from the same origin as the inspector.
+3. Keep referenced local assets inside the project root (the launcher blocks
+   symlinks and paths that escape it).
 4. Optionally read `variant` and `frameParam` query parameters (`?frame=0..N-1`
    by default). Each frame value must render deterministically; do not rely on
    a timer, because export reloads the page once per frame.
@@ -161,14 +182,17 @@ The package is static and has no build step:
 
 ```bash
 cd tools/css-canvas-inspector
+npm run sync:skill
 npm run check
+npm test
 npm pack --dry-run
 npm publish
 ```
 
-Before publishing, set the final package name and repository URL in
-`package.json`. The included MIT license permits commercial use, modification,
-and redistribution.
+`npm run check` verifies that the runtime bundled inside the skill matches the
+repository root. Before publishing, set the final package name and repository
+URL in `package.json`. The included MIT license permits commercial use,
+modification, and redistribution.
 
 ## Other tools from this author
 
@@ -178,9 +202,18 @@ and redistribution.
 
 ## Limitations
 
-- The source must be same-origin because the inspector accesses its iframe DOM.- URL-based assets inside an exported HTML file are inlined when possible;
-  cross-origin assets may remain linked.
+- The launcher is a static server. It does not start Vite/Next backends, proxy
+  API requests, or execute server-side templates; pre-render dynamic pages to
+  HTML first.
+- The runtime prefix `/__css_canvas_inspector__/` is reserved inside the local
+  origin. Directory listings are disabled and symlinks outside the project are
+  not served. Dotfiles such as `.env` and `.git` are blocked, and requests with
+  an unexpected Host header are rejected to reduce DNS-rebinding risk.
+- URL-based assets inside an exported HTML file are inlined when possible;
+  cross-origin assets may remain linked and can prevent canvas capture.
 - Image export uses `html2canvas`; heavily layered gradients, blend modes, and
   filters can be approximated. Use the HTML output for exact CSS behavior.
-- Changes are stored per browser and per `storage` namespace.
-- This is a focused inspector, not a general drag-and-drop page builder.
+- Changes are stored per browser origin and per `storage` namespace. Different
+  projects may use different local ports, so their edit history is separate.
+- Requires Python 3.10+ and a current browser. This is a focused inspector,
+  not a general drag-and-drop page builder or a routed multi-page site editor.

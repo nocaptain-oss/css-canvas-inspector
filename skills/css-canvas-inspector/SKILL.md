@@ -9,6 +9,23 @@ Use this skill to put the human in direct control of a fixed-size HTML canvas.
 The browser editor is the interaction surface; keep source files and design
 judgment under the user's control.
 
+## Install check
+
+The installed skill directory must contain `index.html`, `blank.html`, `src/`,
+`scripts/`, and `agents/`. A directory with only `SKILL.md` and `scripts/` is
+incomplete.
+
+Before the first launch, verify from any working directory:
+
+```bash
+python3 <skill-directory>/scripts/open_inspector.py \
+  /absolute/path/to/sample.html --check
+```
+
+The output must include `Runtime: OK`. If runtime files are missing, tell the
+user to reinstall the complete `skills/css-canvas-inspector` directory under
+`~/.agents/skills/`, `~/.codex/skills/`, or `~/.claude/skills/`.
+
 ## Launch
 
 Natural-language requests such as “打开封面设计器”, “用可视化编辑器改这张海报”,
@@ -16,12 +33,12 @@ or “打开 CSS 画布检查器” should launch this tool rather than reproduc
 
 1. Locate the HTML source to edit and its intended canvas dimensions. If the
    user asks for the blank/default canvas, omit the source argument.
-2. Find `tools/css-canvas-inspector/index.html` in the current project. If it
-   is elsewhere, pass its directory with `--inspector`.
-3. Launch it from the current working directory:
+2. Use the runtime bundled with this skill; `--inspector` is only needed for a
+   development checkout.
+3. Launch with an absolute source path from any working directory:
 
 ```bash
-python3 <skill-directory>/scripts/open_inspector.py <source.html> \
+python3 <skill-directory>/scripts/open_inspector.py /absolute/source.html \
   --width 1280 --height 1707 --export-width 1280
 ```
 
@@ -52,10 +69,39 @@ python3 <skill-directory>/scripts/open_inspector.py \
   --storage my-card
 ```
 
-The launcher starts a same-origin local server, opens the browser, and stays
-alive until interrupted. Keep that process running while the user edits. It
-uses port `8788` by default and reuses an already-running inspector so browser
-storage survives across launches.
+The launcher serves the project at `/` and the bundled inspector under
+`/__css_canvas_inspector__/` from one origin. It opens the browser and stays
+alive until interrupted. The project root defaults to the nearest `.git`,
+`package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` directory, then to
+the source parent. Pass `--project <root>` when local assets extend above that
+directory.
+
+Port `8788` is preferred. The same project reuses its running server; a
+different project gets the next free port, so browser storage stays isolated.
+Keep the server process running while the user edits.
+
+## Project setup
+
+When the user wants this as a repeatable workflow, give them these three steps:
+
+1. Install the complete skill directory in their harness.
+2. Run the `--check` command above against one real project HTML file.
+3. Add this rule to the project's `AGENTS.md`:
+
+```markdown
+## HTML visual review
+
+After producing a fixed-size HTML design, open it in css-canvas-inspector:
+
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  <absolute-html-path> --project <project-root> --width <W> --height <H>
+
+Wait for the human's visual verdict. When they finish, ask for the downloaded
+HTML, diff it against the source, and port the deltas back before exporting.
+```
+
+Adapt the skill path and harness directory to the user's setup. Do not ask the
+user to copy the editor into every project.
 
 ## Proactive use
 
@@ -119,6 +165,18 @@ element itself, not just its characters.
 
 The canvas viewport can scroll horizontally and vertically. Use **适应**, **100%**,
 the zoom range, or `Ctrl/Cmd + wheel` when the user needs a closer view.
+
+## Limits
+
+- The launcher is a static server. Pre-render pages that require a dev server,
+  back-end routes, or authenticated API proxies.
+- Local assets must stay inside the project root. Expand `--project` for shared
+  assets; symlinks outside the root and dotfiles such as `.env` or `.git` are
+  blocked.
+- `/__css_canvas_inspector__/` is reserved. Cross-origin images or fonts can
+  remain external and may prevent exact canvas export.
+- Browser edits are scoped to the local origin and `storage` namespace. A
+  different project may open on a different port with separate edit history.
 
 ## Handoff
 

@@ -4,10 +4,16 @@ Pointers for agents landing in this repository:
 
 - User-facing docs: `README.md`
 - Adoption guide for design workflows, skills, and sub-agents: `INTEGRATION.md`
-- Model-invocable skill: `skills/css-canvas-inspector/` — install it into your
-  harness's skills directory (`~/.codex/skills/`, `~/.claude/skills/`, or
-  `~/.agents/skills/`) to launch the editor on demand.
-- Launch: `python3 skills/css-canvas-inspector/scripts/open_inspector.py <source.html> --width W --height H`
+- Model-invocable skill: `skills/css-canvas-inspector/` — self-contained
+  runtime; install the whole directory into `~/.codex/skills/`,
+  `~/.claude/skills/`, or `~/.agents/skills/`.
+- Verify: `python3 <skill>/scripts/open_inspector.py <source.html> --check`
+  must print `Runtime: OK`.
+- Launch from any project:
+  `python3 <skill>/scripts/open_inspector.py /absolute/source.html --width W --height H`.
+- Runtime source of truth is the repository root. After editing `index.html`,
+  `blank.html`, or `src/`, run `npm run sync:skill` and commit the bundled skill
+  copies. `npm run check` fails when they drift.
 - After generating any fixed-size HTML design (cover, poster, card, slide),
   open it in the inspector for human review instead of iterating through
   screenshots. Read back the exported HTML and port deltas into the source.

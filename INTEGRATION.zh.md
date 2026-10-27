@@ -20,23 +20,34 @@ agent 擅长写 HTML，人类擅长判断视觉——inspector 就是两者之�
 任何定尺寸 HTML 文件都能打开——无需构建、无需框架、零依赖。
 
 ```bash
-# 获取工具
+# 获取自包含 skill
 git clone https://github.com/nocaptain-oss/css-canvas-inspector /path/to/inspector
+mkdir -p ~/.agents/skills/css-canvas-inspector
+cp -R /path/to/inspector/skills/css-canvas-inspector/. \
+  ~/.agents/skills/css-canvas-inspector/
 
-# 在你自己的项目里打开你的设计稿
-cd your-project
-python3 /path/to/inspector/skills/css-canvas-inspector/scripts/open_inspector.py \
-  poster.html \
-  --project . \
-  --inspector /path/to/inspector \
+# 从任意目录验证安装
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html --check
+
+# 打开设计稿
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html \
   --width 1080 --height 1440 --export-width 1280
 ```
 
-启动脚本会把你的项目和 inspector 挂到同一个本地源上并打开浏览器；端口固定复用 `8788`，所以跨次启动浏览器里的编辑记录不会丢。常用参数：`--storage <命名空间>`（按项目隔离编辑记忆）、`--variants a,b`（A/B 画布）、`--dual`（并排对比）、`--no-open`、`--port`。
+`--check` 必须输出 `Runtime: OK`。如果提示缺少 `index.html` 或 `src/`，说明只复制了 `SKILL.md` 和 `scripts/`，skill 目录不完整。
+
+启动器把你的项目挂在 `/`，把内置 inspector 挂在
+`/__css_canvas_inspector__/`，两者同源，项目可以在任意位置。同一项目会复用
+原端口以保留浏览器编辑记录；如果 `8788` 已被另一个项目占用，会自动使用下一个空闲端口。
+
+常用参数：`--project <根目录>`（HTML 依赖上级共享资源时）、`--storage <命名空间>`（按项目隔离编辑记忆）、`--variants a,b`（A/B 画布）、`--dual`（并排对比）、`--no-open`、`--port`。
 
 ## 第二层：你的设计 skill 引用它
 
-把内置 skill 目录 `skills/css-canvas-inspector` 拷到你的 harness 对应的 skills 目录：
+必须复制**完整**的内置 skill 目录 `skills/css-canvas-inspector`（已包含
+`index.html`、`blank.html`、`src/`、`scripts/`、`agents/`）到 harness 对应的 skills 目录：
 
 | Harness | 位置 |
 |---|---|
@@ -50,6 +61,27 @@ python3 /path/to/inspector/skills/css-canvas-inspector/scripts/open_inspector.py
 > `python3 <css-canvas-inspector-skill>/scripts/open_inspector.py <file> --width W --height H`。
 
 你的 skill 继续负责创作，inspector 成为它的审阅界面——不用自建审阅页、不用截图乒乓，人类改出来的是真实 CSS 数值，不是转述的感觉。
+
+使用 Codex 的项目，把下面这段放进项目根的 `AGENTS.md`，就能把工作流固定下来：
+
+```markdown
+## HTML 视觉审阅
+
+生成定尺寸 HTML 后，用已安装的 skill 打开：
+
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  <HTML 绝对路径> --project <项目根> --width <宽> --height <高>
+
+等待人类做视觉决定。人类完成后，索取「下载 HTML」，与源文件 diff，
+把增量回写源文件，再导出最终图片。
+```
+
+首次配置后先验证：
+
+```bash
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/sample.html --project /path/to/project --check
+```
 
 ## 第三层：作为子 agent 的标准界面
 
@@ -94,10 +126,21 @@ python3 <skill>/scripts/open_inspector.py card.html \
 # 5. agent 从共识态导出 JPG（1280 宽）
 ```
 
+## 项目要求与排错
+
+- 源文件必须是本地 HTML。启动器是静态服务器，不会启动 Vite/Next、代理业务 API 或执行服务端模板。
+- 本地 CSS、JS、字体和图片应位于项目根内。共享资源在源文件上级时，用 `--project` 指定根目录。
+- `/assets/hero.png` 这类根相对路径可用，因为项目挂在 `/`；`/__css_canvas_inspector__/` 是保留前缀。
+- 指向项目外的符号链接和 `../` 路径会被拦截。把资源复制进项目，或扩大 `--project`。
+- `.env`、`.git` 等点文件不会对外提供；异常 Host 请求会被拒绝，以降低本地 DNS rebinding 风险。
+- `Runtime: OK` 是安装自检。缺 `index.html`、`src/` 或 `blank.html` 说明 skill 目录复制不完整。
+- `8788` 被其他项目占用时会自动换端口。浏览器编辑记录按 origin（含端口）隔离。
+- 跨域图片/字体可能仍是外链，并可能阻止画布导出。需要精确导出时，把关键资源放到项目内。
+
 ## 契约速查
 
 - URL 参数与默认值：`README.md` → *Configure*
 - 源页面要求：`README.md` → *Integrate with a source page*
 - 导出格式：JPG（默认）/ PNG / 动画 WebP（需配 `--frames` 且源页面支持 `--frame-param` 单帧渲染），宽度取 `exportWidth`；HTML 为编辑内联版
 - 坐标模式：相对 `translate` 微调 vs 以画布左上角为 `0,0` 的绝对坐标
-- 不适用：位图/PSD 编辑、多页站点、拖拽式建站
+- 不适用：位图/PSD 编辑、依赖路由/后端的整站、拖拽式建站

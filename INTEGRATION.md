@@ -23,27 +23,39 @@ contract between the two.
 Any fixed-size HTML file works — no build step, no framework, no dependency.
 
 ```bash
-# get the tool
+# get the self-contained skill
 git clone https://github.com/nocaptain-oss/css-canvas-inspector /path/to/inspector
+mkdir -p ~/.agents/skills/css-canvas-inspector
+cp -R /path/to/inspector/skills/css-canvas-inspector/. \
+  ~/.agents/skills/css-canvas-inspector/
 
-# open your design from your own project
-cd your-project
-python3 /path/to/inspector/skills/css-canvas-inspector/scripts/open_inspector.py \
-  poster.html \
-  --project . \
-  --inspector /path/to/inspector \
+# verify the install from anywhere
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html --check
+
+# open it
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/poster.html \
   --width 1080 --height 1440 --export-width 1280
 ```
 
-The launcher serves your project and the inspector from one origin, opens the
-browser, and reuses port `8788` across runs so browser edits survive. Useful
-flags: `--storage <namespace>` (per-project edit memory), `--variants a,b`
+`--check` must print `Runtime: OK`; if it reports missing `index.html` or
+`src/`, the skill directory was copied incompletely.
+
+The launcher serves your project at `/` and the bundled inspector under
+`/__css_canvas_inspector__/` from one origin. The project can live anywhere.
+It reuses the same port for the same project so browser edits survive, and
+moves to the next port when another project already owns `8788`.
+
+Useful flags: `--project <root>` when local assets extend above the source
+directory, `--storage <namespace>` (per-project edit memory), `--variants a,b`
 (A/B canvases), `--dual` (side-by-side), `--no-open`, `--port`.
 
 ## Level 2: reference it from your design skill
 
-Install the bundled skill where your harness looks for skills — copy the
-`skills/css-canvas-inspector` directory to:
+Install the complete bundled skill directory — it already contains
+`index.html`, `blank.html`, `src/`, `scripts/`, and `agents/`. Copy
+`skills/css-canvas-inspector` to:
 
 | Harness | Location |
 |---|---|
@@ -61,6 +73,27 @@ Then add one handoff line to your generator skill's `SKILL.md`:
 Your skill keeps doing the creative work; the inspector becomes its review UI.
 No custom review screen to build, no screenshot ping-pong, and the human's
 edits are real CSS values instead of vibes.
+
+For a project using Codex, put this concrete rule in the project's `AGENTS.md`:
+
+```markdown
+## HTML visual review
+
+After producing a fixed-size HTML design, open it in the installed skill:
+
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  <absolute-html-path> --project <project-root> --width <W> --height <H>
+
+Wait for the human's visual verdict. When they finish, ask for the downloaded
+HTML, diff it against the source, and port the deltas back before exporting.
+```
+
+Verify the one-time setup before relying on the workflow:
+
+```bash
+python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
+  /absolute/path/to/sample.html --project /path/to/project --check
+```
 
 ## Level 3: make it the standard interface for sub-agents
 
@@ -113,6 +146,26 @@ python3 <skill>/scripts/open_inspector.py card.html \
 # 5. agent exports the JPG (1280 wide) from the agreed state
 ```
 
+## Project requirements and troubleshooting
+
+- The source must be a local HTML file. The launcher is a static server and
+  does not run Vite/Next, proxy application APIs, or evaluate server templates.
+- Local CSS, JS, fonts, and images should live under the project root. Use
+  `--project` to include shared assets above the source file.
+- Root-relative URLs such as `/assets/hero.png` work because the project is
+  served at `/`. The prefix `/__css_canvas_inspector__/` is reserved.
+- Symlinks and `../` paths that escape the project root are blocked. Copy the
+  asset into the project instead.
+- Dotfiles such as `.env` and `.git` are not served. Unexpected Host headers
+  are rejected to reduce local DNS-rebinding risk.
+- `Runtime: OK` is the install health check. Missing `index.html`, `src/`, or
+  `blank.html` means the whole skill directory was not copied.
+- If `8788` belongs to another project, the launcher chooses the next free
+  port. Browser edits are stored per origin, so the port is part of the storage
+  identity.
+- Cross-origin images/fonts may remain external and can prevent canvas
+  capture. Keep critical assets local when exact export matters.
+
 ## Contracts reference
 
 - URL parameters and defaults: `README.md` → *Configure*
@@ -120,4 +173,5 @@ python3 <skill>/scripts/open_inspector.py card.html \
 - Export formats: JPG (default) / PNG / animated WebP (needs `--frames` and a `--frame-param`) at `exportWidth`; HTML with edits inlined
 - Coordinate modes: relative `translate` nudges vs absolute `0,0` from the
   canvas corner
-- Not for: bitmap/PSD editing, multi-page sites, drag-and-drop page building
+- Not for: bitmap/PSD editing, routed/back-end multi-page apps, or
+  drag-and-drop page building
