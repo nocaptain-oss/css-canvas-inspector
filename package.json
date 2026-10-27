@@ -5,9 +5,11 @@
   "type": "module",
   "license": "MIT",
   "files": [
+    ".github/social-preview.png",
     "demo.html",
     "skills",
     "README.md",
+    "README.zh.md",
     "LICENSE",
     "AGENTS.md",
     "INTEGRATION.md",

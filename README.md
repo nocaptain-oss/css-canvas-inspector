@@ -1,9 +1,12 @@
+English · [简体中文](README.zh.md)
+
+![CSS Canvas Inspector social preview](.github/social-preview.png)
+
 # CSS Canvas Inspector
 
-A lightweight visual CSS editor for fixed-size HTML canvases. It is designed
-for human-agent design collaboration: a person selects elements and adjusts
-layout values on the left, while an agent can keep editing the underlying HTML
-and CSS.
+Visual QA for agent-built fixed-size HTML. A person selects elements and
+adjusts real CSS in the browser, then hands the edited HTML back to the agent.
+Export JPG, PNG, animated WebP, or the edited HTML.
 
 No build step or framework is required. The Python launcher uses only the
 standard library. It serves the inspector runtime and your project from one
@@ -26,7 +29,8 @@ Three ways to make this the review surface for your design work — see
 | Path | Needed to run installed skill? | Audience |
 |---|---:|---|
 | `skills/css-canvas-inspector/` | Yes | Canonical runtime and end-user skill; copy this complete directory |
-| `README.md`, `INTEGRATION.md`, `INTEGRATION.zh.md` | No | GitHub/NPM onboarding and workflow guides |
+| `README.md`, `README.zh.md`, `INTEGRATION.md`, `INTEGRATION.zh.md` | No | GitHub/NPM onboarding and workflow guides |
+| `.github/social-preview.png` | No | Approved 1280×640 GitHub social preview source |
 | `LICENSE` | Yes — copied into the bundled skill | Everyone redistributing or using the code |
 | `tests/`, `scripts/` | No | Maintainers and CI |
 | `AGENTS.md` | No | Agents maintaining this repository |
