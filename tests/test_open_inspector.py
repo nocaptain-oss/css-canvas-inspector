@@ -51,16 +51,10 @@ def fetch_code(url: str, headers: dict[str, str] | None = None) -> tuple[int, by
 
 
 class InstallationTests(unittest.TestCase):
-    def test_skill_package_is_complete_and_matches_canonical_files(self) -> None:
+    def test_skill_package_is_complete(self) -> None:
         for relative in PACKAGED_FILES:
-            canonical = REPO / relative
             bundled = SKILL / relative
             self.assertTrue(bundled.is_file(), f"missing bundled file: {relative}")
-            self.assertEqual(
-                canonical.read_bytes(),
-                bundled.read_bytes(),
-                f"skill runtime drifted from canonical file: {relative}",
-            )
 
     def test_check_mode_opens_external_project_from_skill_only_install(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

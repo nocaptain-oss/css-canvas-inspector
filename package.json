@@ -1,14 +1,11 @@
 {
   "name": "css-canvas-inspector",
-  "version": "0.3.12",
+  "version": "0.4.0",
   "description": "A lightweight visual CSS inspector for human-agent collaboration on fixed-size HTML canvases.",
   "type": "module",
   "license": "MIT",
   "files": [
-    "index.html",
-    "blank.html",
     "demo.html",
-    "src",
     "skills",
     "README.md",
     "LICENSE",
@@ -17,9 +14,8 @@
     "INTEGRATION.zh.md"
   ],
   "scripts": {
-    "sync:skill": "node scripts/sync-skill-runtime.mjs",
-    "check:skill": "node scripts/sync-skill-runtime.mjs --check",
-    "check": "node --check src/inspector.js && npm run check:skill",
+    "check:skill": "node scripts/check-skill-runtime.mjs",
+    "check": "node --check skills/css-canvas-inspector/src/inspector.js && npm run check:skill",
     "test": "node --test tests/canvas-size.test.mjs && python3 -m unittest discover -s tests -p 'test_*.py'"
   },
   "keywords": [

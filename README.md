@@ -25,18 +25,17 @@ Three ways to make this the review surface for your design work — see
 
 | Path | Needed to run installed skill? | Audience |
 |---|---:|---|
-| `skills/css-canvas-inspector/` | Yes | End users copy this complete directory |
+| `skills/css-canvas-inspector/` | Yes | Canonical runtime and end-user skill; copy this complete directory |
 | `README.md`, `INTEGRATION.md`, `INTEGRATION.zh.md` | No | GitHub/NPM onboarding and workflow guides |
 | `LICENSE` | Yes — copied into the bundled skill | Everyone redistributing or using the code |
-| root `index.html`, `blank.html`, `src/` | No for skill-only use | Canonical development runtime, synced into the skill |
 | `tests/`, `scripts/` | No | Maintainers and CI |
 | `AGENTS.md` | No | Agents maintaining this repository |
 | `package.json`, `demo.html` | No | NPM publishing and local demonstration |
 
-The root runtime is the development source of truth. `npm run sync:skill`
-copies it into the self-contained skill directory; `npm run check` fails if the
-copies drift. Human guides stay at the repository root rather than being
-duplicated inside every installed skill.
+The bundled skill directory is the single runtime source of truth.
+`npm run check` validates that it contains every required runtime file. Human
+guides stay at the repository root rather than being duplicated inside every
+installed skill.
 
 ## Install the skill
 
@@ -153,7 +152,7 @@ The inspector is configured through URL parameters:
 Example:
 
 ```text
-index.html?src=/campaign/poster.html&width=auto&height=auto&exportWidth=1280
+http://127.0.0.1:8788/__css_canvas_inspector__/index.html?src=/campaign/poster.html&width=auto&height=auto&exportWidth=1280
 ```
 
 ### Automatic canvas size
@@ -210,7 +209,7 @@ pattern; radial and conic gradients are still dropped.
 Animated WebP is available when `frames > 1`: pick **WebP**, set the per-frame
 duration and the extra hold on the last frame, then export. Each frame is
 rendered and encoded separately and muxed into one animated file by
-`src/webp-anim.js`. Export renders the active canvas only: in dual-canvas mode
+`skills/css-canvas-inspector/src/webp-anim.js`. Export renders the active canvas only: in dual-canvas mode
 it walks the active variant's frames and leaves the other canvas untouched. The
 multi-page `canvases` mode is rejected and asks for JPG/PNG instead. If every
 frame encodes to the same size, the status line warns that the page may not
@@ -222,17 +221,16 @@ The package is static and has no build step:
 
 ```bash
 cd tools/css-canvas-inspector
-npm run sync:skill
 npm run check
 npm test
 npm pack --dry-run
 npm publish
 ```
 
-`npm run check` verifies that the runtime bundled inside the skill matches the
-repository root. Before publishing, set the final package name and repository
-URL in `package.json`. The included MIT license permits commercial use,
-modification, and redistribution.
+`npm run check` verifies that the bundled skill runtime is complete. Before
+publishing, set the final package name and repository URL in `package.json`.
+The included MIT license permits commercial use, modification, and
+redistribution.
 
 ## Other tools from this author
 

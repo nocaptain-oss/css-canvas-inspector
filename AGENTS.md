@@ -13,9 +13,9 @@ Pointers for agents landing in this repository:
   `python3 <skill>/scripts/open_inspector.py /absolute/source.html`.
   Omit dimensions for automatic measurement; pass them only for responsive or
   ambiguous layouts.
-- Runtime source of truth is the repository root. After editing `index.html`,
-  `blank.html`, or `src/`, run `npm run sync:skill` and commit the bundled skill
-  copies. `npm run check` fails when they drift.
+- Runtime source of truth is `skills/css-canvas-inspector/`. Edit its
+  `index.html`, `blank.html`, and `src/` directly; `npm run check` validates
+  that the bundled runtime is complete.
 - After generating any fixed-size HTML design (cover, poster, card, slide),
   open it in the inspector for human review instead of iterating through
   screenshots. Read back the exported HTML and port deltas into the source.

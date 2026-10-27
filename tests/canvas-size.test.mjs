@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { chooseCanvasSize } from "../src/canvas-size.js";
+import { chooseCanvasSize } from "../skills/css-canvas-inspector/src/canvas-size.js";
 
 test("fixed body height wins over the iframe viewport scroll height", () => {
   assert.deepEqual(

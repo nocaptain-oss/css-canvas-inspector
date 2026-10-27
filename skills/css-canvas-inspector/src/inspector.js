@@ -1,5 +1,5 @@
-import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.11";
-import { chooseCanvasSize } from "./canvas-size.js?v=0.3.11";
+import { encodeAnimatedWebp } from "./webp-anim.js?v=0.4.0";
+import { chooseCanvasSize } from "./canvas-size.js?v=0.4.0";
 
 const byId = (id) => document.getElementById(id);
 
