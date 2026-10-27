@@ -33,10 +33,12 @@ python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
 # 打开设计稿
 python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
   /absolute/path/to/poster.html \
-  --width 1080 --height 1440 --export-width 1280
+  --export-width 1280
 ```
 
 `--check` 必须输出 `Runtime: OK`。如果提示缺少 `index.html` 或 `src/`，说明只复制了 `SKILL.md` 和 `scripts/`，skill 目录不完整。
+
+不传 `--width` / `--height` 时，inspector 会在 iframe 完成布局和字体加载后自动测量。优先识别 `.poster` / `main.poster` 等固定画布根、`data-canvas-size`，以及 `<meta name="canvas-width">`。响应式页面或尺寸不明确的页面仍应显式传尺寸。
 
 启动器把你的项目挂在 `/`，把内置 inspector 挂在
 `/__css_canvas_inspector__/`，两者同源，项目可以在任意位置。同一项目会复用
@@ -58,7 +60,8 @@ python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
 然后在你的生成器 skill 的 `SKILL.md` 里加一行交接规则：
 
 > 写完最终 HTML 文件后，主动提议用 `css-canvas-inspector`（本地服务上的可视化编辑器）打开它，让用户在导出前可视化调整布局、字排与颜色。执行
-> `python3 <css-canvas-inspector-skill>/scripts/open_inspector.py <file> --width W --height H`。
+> `python3 <css-canvas-inspector-skill>/scripts/open_inspector.py <file>`。
+> 只有自动尺寸无法判断时才补 `--width` / `--height`。
 
 你的 skill 继续负责创作，inspector 成为它的审阅界面——不用自建审阅页、不用截图乒乓，人类改出来的是真实 CSS 数值，不是转述的感觉。
 
@@ -70,7 +73,7 @@ python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
 生成定尺寸 HTML 后，用已安装的 skill 打开：
 
 python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
-  <HTML 绝对路径> --project <项目根> --width <宽> --height <高>
+  <HTML 绝对路径> --project <项目根>
 
 等待人类做视觉决定。人类完成后，索取「下载 HTML」，与源文件 diff，
 把增量回写源文件，再导出最终图片。
@@ -118,7 +121,7 @@ chrome --headless=new --screenshot=cover.png --window-size=1080,1440 cover.html
 # 1. 你的卡片 skill 写出 1080x1440 的 card.html
 # 2. 打开送人类审阅，A/B 双画布
 python3 <skill>/scripts/open_inspector.py card.html \
-  --width 1080 --height 1440 --export-width 1280 \
+  --export-width 1280 \
   --storage my-card --variants a,b \
   --variant-labels "A 文字|B 日历" --dual
 # 3. 人类调整字排与间距，点「下载 HTML」
@@ -129,6 +132,7 @@ python3 <skill>/scripts/open_inspector.py card.html \
 ## 项目要求与排错
 
 - 源文件必须是本地 HTML。启动器是静态服务器，不会启动 Vite/Next、代理业务 API 或执行服务端模板。
+- 自动尺寸以 iframe 的实际渲染结果为准。使用 `100vw`/`100vh` 或媒体查询的响应式页面，应写 `canvas-width`/`canvas-height` 元信息或显式传尺寸。
 - 本地 CSS、JS、字体和图片应位于项目根内。共享资源在源文件上级时，用 `--project` 指定根目录。
 - `/assets/hero.png` 这类根相对路径可用，因为项目挂在 `/`；`/__css_canvas_inspector__/` 是保留前缀。
 - 指向项目外的符号链接和 `../` 路径会被拦截。把资源复制进项目，或扩大 `--project`。

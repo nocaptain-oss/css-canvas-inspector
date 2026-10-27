@@ -115,6 +115,39 @@ class InstallationTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("outside project", result.stderr)
 
+    def test_source_dimensions_default_to_auto(self) -> None:
+        source = REPO / "tests" / "fixtures" / "auto-size.html"
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), str(source), "--check"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Width: auto", result.stdout)
+        self.assertIn("Height: auto", result.stdout)
+
+    def test_explicit_dimensions_override_auto(self) -> None:
+        source = REPO / "tests" / "fixtures" / "auto-size.html"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                str(source),
+                "--width",
+                "1080",
+                "--height",
+                "2000",
+                "--check",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Width: 1080", result.stdout)
+        self.assertIn("Height: 2000", result.stdout)
+
 
 class ServerTests(unittest.TestCase):
     @classmethod

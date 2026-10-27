@@ -10,7 +10,9 @@ Pointers for agents landing in this repository:
 - Verify: `python3 <skill>/scripts/open_inspector.py <source.html> --check`
   must print `Runtime: OK`.
 - Launch from any project:
-  `python3 <skill>/scripts/open_inspector.py /absolute/source.html --width W --height H`.
+  `python3 <skill>/scripts/open_inspector.py /absolute/source.html`.
+  Omit dimensions for automatic measurement; pass them only for responsive or
+  ambiguous layouts.
 - Runtime source of truth is the repository root. After editing `index.html`,
   `blank.html`, or `src/`, run `npm run sync:skill` and commit the bundled skill
   copies. `npm run check` fails when they drift.

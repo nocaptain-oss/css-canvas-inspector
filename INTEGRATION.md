@@ -36,11 +36,16 @@ python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
 # open it
 python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
   /absolute/path/to/poster.html \
-  --width 1080 --height 1440 --export-width 1280
+  --export-width 1280
 ```
 
 `--check` must print `Runtime: OK`; if it reports missing `index.html` or
 `src/`, the skill directory was copied incompletely.
+
+When `--width` and `--height` are omitted, the inspector measures the loaded
+poster. Fixed canvas roots such as `.poster`/`main.poster`, `data-canvas-size`,
+or `<meta name="canvas-width">` are detected automatically. Pass explicit
+dimensions for responsive pages or ambiguous layouts.
 
 The launcher serves your project at `/` and the bundled inspector under
 `/__css_canvas_inspector__/` from one origin. The project can live anywhere.
@@ -68,7 +73,8 @@ Then add one handoff line to your generator skill's `SKILL.md`:
 > After writing the final HTML file, offer to open it in `css-canvas-inspector`
 > (visual editor on a local server) so the user can tweak layout, typography,
 > and color visually before export. Run
-> `python3 <css-canvas-inspector-skill>/scripts/open_inspector.py <file> --width W --height H`.
+> `python3 <css-canvas-inspector-skill>/scripts/open_inspector.py <file>`.
+> Add `--width`/`--height` only when automatic sizing is ambiguous.
 
 Your skill keeps doing the creative work; the inspector becomes its review UI.
 No custom review screen to build, no screenshot ping-pong, and the human's
@@ -82,7 +88,7 @@ For a project using Codex, put this concrete rule in the project's `AGENTS.md`:
 After producing a fixed-size HTML design, open it in the installed skill:
 
 python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
-  <absolute-html-path> --project <project-root> --width <W> --height <H>
+  <absolute-html-path> --project <project-root>
 
 Wait for the human's visual verdict. When they finish, ask for the downloaded
 HTML, diff it against the source, and port the deltas back before exporting.
@@ -138,7 +144,7 @@ Convention for multi-variant work: one storage namespace per project
 # 1. your card skill writes card.html at 1080x1440
 # 2. open it for human review, dual A/B
 python3 <skill>/scripts/open_inspector.py card.html \
-  --width 1080 --height 1440 --export-width 1280 \
+  --export-width 1280 \
   --storage my-card --variants a,b \
   --variant-labels "A 文字|B 日历" --dual
 # 3. human tweaks typography and spacing, clicks 下载 HTML
@@ -150,6 +156,9 @@ python3 <skill>/scripts/open_inspector.py card.html \
 
 - The source must be a local HTML file. The launcher is a static server and
   does not run Vite/Next, proxy application APIs, or evaluate server templates.
+- Automatic sizing follows the rendered iframe. Responsive pages using
+  `100vw`/`100vh` or media queries should declare `canvas-width`/`canvas-height`
+  metadata or pass explicit dimensions.
 - Local CSS, JS, fonts, and images should live under the project root. Use
   `--project` to include shared assets above the source file.
 - Root-relative URLs such as `/assets/hero.png` work because the project is

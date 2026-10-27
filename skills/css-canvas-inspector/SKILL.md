@@ -31,15 +31,16 @@ user to reinstall the complete `skills/css-canvas-inspector` directory under
 Natural-language requests such as “打开封面设计器”, “用可视化编辑器改这张海报”,
 or “打开 CSS 画布检查器” should launch this tool rather than reproduce its UI.
 
-1. Locate the HTML source to edit and its intended canvas dimensions. If the
-   user asks for the blank/default canvas, omit the source argument.
+1. Locate the HTML source to edit. Canvas dimensions are optional; fixed-size
+   roots and metadata are detected after the iframe loads. If the user asks for
+   the blank/default canvas, omit the source argument.
 2. Use the runtime bundled with this skill; `--inspector` is only needed for a
    development checkout.
 3. Launch with an absolute source path from any working directory:
 
 ```bash
 python3 <skill-directory>/scripts/open_inspector.py /absolute/source.html \
-  --width 1280 --height 1707 --export-width 1280
+  --export-width 1280
 ```
 
 Open the blank inspection canvas:
@@ -50,16 +51,21 @@ python3 <skill-directory>/scripts/open_inspector.py
 
 The blank canvas is for background/style inspection. Add visible content in
 the source HTML when the user needs to create text or design elements.
+It defaults to `1280 × 1707`.
+
+Automatic size precedence: explicit `--width`/`--height`, then
+`<meta name="canvas-width">`/`canvas-height`, `data-canvas-width`/height or
+`data-canvas-size="1080x1440"`, a fixed `[data-canvas]`/`.poster`/`main.poster`
+root, then body/document scroll dimensions. Pass explicit dimensions for
+responsive pages whose `100vw`/`100vh` layout depends on the inspector viewport.
 
 A complete example — dual A/B variants plus animation frames, from your own
 project:
 
 ```bash
 python3 <skill-directory>/scripts/open_inspector.py \
-  card.html \
+card.html \
   --name "封面工作台" \
-  --width 1080 \
-  --height 1440 \
   --export-width 1280 \
   --variants a,b \
   --variant-labels "A 纯文字|B 动图" \
@@ -94,7 +100,7 @@ When the user wants this as a repeatable workflow, give them these three steps:
 After producing a fixed-size HTML design, open it in css-canvas-inspector:
 
 python3 ~/.agents/skills/css-canvas-inspector/scripts/open_inspector.py \
-  <absolute-html-path> --project <project-root> --width <W> --height <H>
+  <absolute-html-path> --project <project-root>
 
 Wait for the human's visual verdict. When they finish, ask for the downloaded
 HTML, diff it against the source, and port the deltas back before exporting.
@@ -110,7 +116,8 @@ slide, or thumbnail. Do not describe the result or iterate through
 screenshots. Open it here instead:
 
 1. Generate the HTML at its final dimensions.
-2. Launch `scripts/open_inspector.py <file> --width W --height H`.
+2. Launch `scripts/open_inspector.py <file>`; add dimensions only if auto
+   detection is ambiguous.
 3. Tell the user the editor is open and which controls matter for this design.
 4. Wait for their visual decisions; do not guess them.
 
@@ -175,6 +182,9 @@ the zoom range, or `Ctrl/Cmd + wheel` when the user needs a closer view.
   blocked.
 - `/__css_canvas_inspector__/` is reserved. Cross-origin images or fonts can
   remain external and may prevent exact canvas export.
+- Auto-size follows the iframe layout. Responsive designs should declare canvas
+  metadata or pass explicit dimensions when the intended export size differs
+  from the measured viewport.
 - Browser edits are scoped to the local origin and `storage` namespace. A
   different project may open on a different port with separate edit history.
 

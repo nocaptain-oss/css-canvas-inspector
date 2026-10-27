@@ -281,11 +281,18 @@ def build_url(
         source_url = project_url(layout.source, layout.project)
         default_name = "CSS Canvas Inspector"
 
+    if layout.source_was_omitted:
+        width = args.width if args.width is not None else 1280
+        height = args.height if args.height is not None else 1707
+    else:
+        width = args.width if args.width is not None else "auto"
+        height = args.height if args.height is not None else "auto"
+
     params = {
         "src": source_url,
         "name": default_name if args.name == "CSS Canvas Inspector" else args.name,
-        "width": str(args.width),
-        "height": str(args.height),
+        "width": str(width),
+        "height": str(height),
         "exportWidth": str(args.export_width),
     }
     optional = {
@@ -346,8 +353,16 @@ def main() -> int:
         help="Inspector runtime directory; defaults to the runtime bundled with this skill",
     )
     parser.add_argument("--name", default="CSS Canvas Inspector")
-    parser.add_argument("--width", type=int, default=1280)
-    parser.add_argument("--height", type=int, default=1707)
+    parser.add_argument(
+        "--width",
+        type=int,
+        help="canvas width; omit to measure the source page (blank defaults to 1280)",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        help="canvas height; omit to measure the source page (blank defaults to 1707)",
+    )
     parser.add_argument("--export-width", type=int, default=1280)
     parser.add_argument("--dual", action="store_true")
     parser.add_argument("--variants", default="")
@@ -370,6 +385,10 @@ def main() -> int:
         help="Validate the installation, project, and source paths, then exit",
     )
     args = parser.parse_args()
+    for name in ("width", "height", "export_width"):
+        value = getattr(args, name)
+        if value is not None and value <= 0:
+            parser.error(f"--{name.replace('_', '-')} must be positive")
     if not 0 <= args.port <= 65535:
         parser.error("--port must be between 0 and 65535")
 
@@ -381,6 +400,17 @@ def main() -> int:
         print(
             "Source: "
             + ("blank canvas" if layout.source_was_omitted else str(layout.source))
+        )
+        default_width, default_height = (
+            (1280, 1707)
+            if layout.source_was_omitted
+            else ("auto", "auto")
+        )
+        print(
+            f"Width: {args.width if args.width is not None else default_width}"
+        )
+        print(
+            f"Height: {args.height if args.height is not None else default_height}"
         )
         print(f"Entry: {runtime_url()}")
         return 0

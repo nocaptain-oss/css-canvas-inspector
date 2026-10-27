@@ -1,4 +1,4 @@
-import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.8";
+import { encodeAnimatedWebp } from "./webp-anim.js?v=0.3.9";
 
 const byId = (id) => document.getElementById(id);
 
@@ -11,11 +11,25 @@ function splitList(value) {
 
 function readUrlConfig() {
   const params = new URLSearchParams(location.search);
+  const widthParam = params.get("width");
+  const heightParam = params.get("height");
+  const widthValue = Number(widthParam);
+  const heightValue = Number(heightParam);
   return {
     src: params.get("src") || "",
     name: params.get("name") || "CSS Canvas Inspector",
-    width: Number(params.get("width")) || 1280,
-    height: Number(params.get("height")) || 1707,
+    width: widthValue > 0 ? widthValue : 1280,
+    height: heightValue > 0 ? heightValue : 1707,
+    autoWidth:
+      !widthParam ||
+      widthParam === "auto" ||
+      !Number.isFinite(widthValue) ||
+      widthValue <= 0,
+    autoHeight:
+      !heightParam ||
+      heightParam === "auto" ||
+      !Number.isFinite(heightValue) ||
+      heightValue <= 0,
     exportWidth: Number(params.get("exportWidth")) || 1280,
     dual: params.get("dual") === "1",
     variants: splitList(params.get("variants")),
@@ -35,6 +49,8 @@ export function createCanvasInspector(options) {
   const config = {
     width: 1280,
     height: 1707,
+    autoWidth: false,
+    autoHeight: false,
     exportWidth: 1280,
     dual: false,
     variants: [],
@@ -58,6 +74,8 @@ export function createCanvasInspector(options) {
       doc: null,
       variant: "",
       pendingSelect: "",
+      width: null,
+      height: null,
     },
     {
       index: 1,
@@ -68,6 +86,8 @@ export function createCanvasInspector(options) {
       doc: null,
       variant: "",
       pendingSelect: "",
+      width: null,
+      height: null,
     },
   ];
 
@@ -189,6 +209,107 @@ export function createCanvasInspector(options) {
     if (variant) url.searchParams.set(config.variantParam, variant);
     if (config.frames > 0) url.searchParams.set(config.frameParam, String(currentFrame));
     return url;
+  }
+
+  function metaDimension(doc, name) {
+    const value = doc.querySelector(`meta[name="${name}"]`)?.content || "";
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.ceil(parsed) : null;
+  }
+
+  function visibleCanvasElement(element) {
+    if (!element) return false;
+    const style = element.ownerDocument.defaultView.getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  }
+
+  function canvasRoot(doc) {
+    const selectors = [
+      "[data-canvas]",
+      "[data-canvas-width], [data-canvas-height]",
+      "[data-canvas-size]",
+      "[data-poster]",
+      "main.poster",
+      "#poster",
+      ".poster",
+    ];
+    for (const selector of selectors) {
+      const element = doc.querySelector(selector);
+      if (visibleCanvasElement(element)) return element;
+    }
+    const children = Array.from(doc.body?.children || []).filter(visibleCanvasElement);
+    return children.length === 1 ? children[0] : doc.body || doc.documentElement;
+  }
+
+  function measureCanvasSize(doc) {
+    const root = canvasRoot(doc);
+    const rect = root.getBoundingClientRect();
+    const attrWidth = Number.parseFloat(root.dataset?.canvasWidth || "");
+    const attrHeight = Number.parseFloat(root.dataset?.canvasHeight || "");
+    const attrSize = (root.dataset?.canvasSize || "").match(
+      /^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i,
+    );
+    let width = metaDimension(doc, "canvas-width");
+    let height = metaDimension(doc, "canvas-height");
+    if (!width && Number.isFinite(attrWidth) && attrWidth > 0) {
+      width = Math.ceil(attrWidth);
+    }
+    if (!height && Number.isFinite(attrHeight) && attrHeight > 0) {
+      height = Math.ceil(attrHeight);
+    }
+    if (!width && attrSize) width = Number(attrSize[1]);
+    if (!height && attrSize) height = Number(attrSize[2]);
+    width ||= Math.ceil(rect.width || root.offsetWidth || 0);
+    height ||= Math.ceil(rect.height || root.offsetHeight || 0);
+    if (root === doc.body || root === doc.documentElement) {
+      width = Math.max(
+        width,
+        doc.documentElement.scrollWidth,
+        doc.body?.scrollWidth || 0,
+      );
+      height = Math.max(
+        height,
+        doc.documentElement.scrollHeight,
+        doc.body?.scrollHeight || 0,
+      );
+    }
+    return {
+      width: Math.max(1, Math.round(width || config.width)),
+      height: Math.max(1, Math.round(height || config.height)),
+    };
+  }
+
+  function applyCanvasSize(width, height, resetZoom = false) {
+    activeWidth = Math.max(1, Math.round(width));
+    activeHeight = Math.max(1, Math.round(height));
+    if (!canvasesMode) {
+      config.width = activeWidth;
+      config.height = activeHeight;
+    }
+    document.documentElement.style.setProperty("--canvas-width", `${activeWidth}px`);
+    document.documentElement.style.setProperty("--canvas-height", `${activeHeight}px`);
+    byId("toolMeta").textContent =
+      `${activeWidth} × ${activeHeight} · CSS` +
+      (config.autoWidth || config.autoHeight ? " · AUTO" : "");
+    if (resetZoom) zoomMode = "fit";
+    updateScale();
+  }
+
+  function applyRecordSize(record, resetZoom = false) {
+    if (!record?.doc || canvasesMode) return;
+    const firstMeasure = record.width === null || record.height === null;
+    const measured = measureCanvasSize(record.doc);
+    record.width = config.autoWidth ? measured.width : config.width;
+    record.height = config.autoHeight ? measured.height : config.height;
+    if (record.index === activeIndex) {
+      applyCanvasSize(record.width, record.height, resetZoom || firstMeasure);
+    }
   }
 
   function elementPath(element, doc) {
@@ -551,6 +672,7 @@ export function createCanvasInspector(options) {
 
     slots.forEach((slot) => slot.slot.classList.toggle("active", slot.index === index));
     activeCanvasSelect.value = String(index);
+    if (record.doc && !canvasesMode) applyRecordSize(record);
     clearInspector();
     refreshElementSelect();
     updateHistoryButtons();
@@ -787,7 +909,10 @@ export function createCanvasInspector(options) {
 
   function setupToolbar() {
     byId("toolName").textContent = config.name || "CSS Canvas Inspector";
-    byId("toolMeta").textContent = `${config.width} × ${config.height} · CSS`;
+    byId("toolMeta").textContent =
+      config.autoWidth || config.autoHeight
+        ? "AUTO · CSS"
+        : `${config.width} × ${config.height} · CSS`;
     byId("exportWidth").value = String(config.exportWidth || 1280);
     const syncExportFields = () => {
       const animated = byId("exportFormat").value === "webp" && config.frames > 1;
@@ -1539,7 +1664,16 @@ export function createCanvasInspector(options) {
         sourceDocument = record.doc;
         overrides = loadOverridesFor(currentVariant);
         initCanvasNodes(record.doc);
-        if (!canvasesMode) refreshElementSelect();
+        if (!canvasesMode) {
+          applyRecordSize(record, true);
+          const measuredDocument = record.doc;
+          measuredDocument.fonts?.ready?.then(() => {
+            requestAnimationFrame(() => {
+              if (record.doc === measuredDocument) applyRecordSize(record);
+            });
+          });
+          refreshElementSelect();
+        }
       }
       updateScale();
       downloadCanvasButton.disabled = false;

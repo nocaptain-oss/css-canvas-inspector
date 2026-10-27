@@ -74,7 +74,7 @@ automatically:
 
 ```bash
 python3 skills/css-canvas-inspector/scripts/open_inspector.py demo.html \
-  --width 1280 --height 1707
+  --export-width 1280
 ```
 
 The blank starter is an inspection canvas, not a drag-and-drop page builder.
@@ -118,8 +118,8 @@ The inspector is configured through URL parameters:
 |---|---:|---|---|
 | `src` | yes | `/poster.html` | Same-origin page path; the launcher fills this automatically |
 | `name` | no | `Poster Inspector` | Toolbar title |
-| `width` | no | `1080` | Canvas width in CSS pixels |
-| `height` | no | `1440` | Canvas height in CSS pixels |
+| `width` | no | `1080` or `auto` | Canvas width; omitted for a source means auto-detect |
+| `height` | no | `1440` or `auto` | Canvas height; omitted for a source means auto-detect |
 | `exportWidth` | no | `1280` | Image export width in pixels |
 | `dual` | no | `1` | Start in dual-canvas mode when two variants exist |
 | `variants` | no | `a,b` | Values for the variant parameter |
@@ -134,8 +134,29 @@ The inspector is configured through URL parameters:
 Example:
 
 ```text
-index.html?src=/campaign/poster.html&width=1080&height=1440&exportWidth=1280
+index.html?src=/campaign/poster.html&width=auto&height=auto&exportWidth=1280
 ```
+
+### Automatic canvas size
+
+When `--width` and `--height` are omitted for a source file, the inspector
+measures the loaded iframe after layout and fonts are ready. Detection order:
+
+1. `<meta name="canvas-width">` and `<meta name="canvas-height">`.
+2. `data-canvas-width`, `data-canvas-height`, or `data-canvas-size="1080x1440"`.
+3. A fixed canvas root: `[data-canvas]`, `[data-poster]`, `main.poster`,
+   `#poster`, or `.poster`.
+4. The body/document scroll dimensions.
+
+Explicit CLI dimensions override detection. For responsive pages that use
+`100vw`, `100vh`, or media queries, declare the intended export size:
+
+```html
+<meta name="canvas-width" content="1080">
+<meta name="canvas-height" content="1440">
+```
+
+The blank canvas still defaults to `1280 × 1707`.
 
 ## Integrate with a source page
 
@@ -215,5 +236,8 @@ modification, and redistribution.
   filters can be approximated. Use the HTML output for exact CSS behavior.
 - Changes are stored per browser origin and per `storage` namespace. Different
   projects may use different local ports, so their edit history is separate.
+- Automatic sizing reflects the layout inside the inspector iframe. Responsive
+  content should declare metadata or pass explicit dimensions when its viewport
+  size differs from the intended export size.
 - Requires Python 3.10+ and a current browser. This is a focused inspector,
   not a general drag-and-drop page builder or a routed multi-page site editor.
